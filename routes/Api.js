@@ -32,9 +32,6 @@ router.post('/transaction', (req,res) => {
         //assuming that all input are correct
         console.log(req.body.transactionDate)
         let query = {
-            // startDate: {$or:{$lte:(req.body.transactionDate)}, $exists:false},
-            // endDate: {$or:{$gte:(req.body.transactionDate)}, $exists:false},
-            // redemptionLimit:{$or:{$gt:0},$exists:false},
             $and:[
                 {$or:[
                     {startDate:{$lte:(req.body.transactionDate)}},
