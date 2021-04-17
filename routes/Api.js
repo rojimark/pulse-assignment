@@ -4,23 +4,15 @@ const router = express.Router();
 const ruleSets = require('../models/rulesets');
 const transactions = require('../models/transactions');
 const moment = require('moment')
-const {isEntryValid} = require('../services/validations')
 
 /**Unsubscribe multiple Users */
 router.post('/ruleset', (req,res) => {
     try {
         console.log(req.body)
-        let newItem = req.body
-        let isValid = isEntryValid(newItem)
 
-        if(!isValid.status) {
-            res.status(400).send({
-                message:isValid.errorMessage
-            })
-        }
         ruleSets.create({
-            startDate: moment(req.body.startDate),
-            endDate:moment(req.body.endDate),
+            startDate: req.body.startDate,
+            endDate:req.body.endDate,
             cashback: req.body.cashback,
             redemptionLimit:req.body.redemptionLimit,
         }).then(() => {
@@ -40,14 +32,28 @@ router.post('/transaction', (req,res) => {
         //assuming that all input are correct
         console.log(req.body.transactionDate)
         let query = {
-            startDate: {$gte:moment(req.body.transactionDate)},
-            endDate:{$lte:moment(req.body.transactionDate)},
-            redemptionLimit:{$gt:0}
+            // startDate: {$or:{$lte:(req.body.transactionDate)}, $exists:false},
+            // endDate: {$or:{$gte:(req.body.transactionDate)}, $exists:false},
+            // redemptionLimit:{$or:{$gt:0},$exists:false},
+            $and:[
+                {$or:[
+                    {startDate:{$lte:(req.body.transactionDate)}},
+                    {startDate:{$exists:false}}
+                ]},
+                {$or:[
+                    {endDate:{$gte:(req.body.transactionDate)}},
+                    {startDate:{$exists:false}}
+                ]},
+                {$or:[
+                    {redemptionLimit:{$gt:0}},
+                    {redemptionLimit:{$exists:false}}
+                ]}
+            ]
         }
 
-        ruleSets.findOne(
-            {query}
-        ).then(async(result,error) => {
+        ruleSets.findOne(query).sort({cashback:-1})
+        .then(async(result,error) => {
+            console.log(result)
             if(error) {
                 res.status(400).send({
                     message:"Something went wrong."
@@ -74,7 +80,7 @@ router.post('/transaction', (req,res) => {
                         date:req.body.transactionDate,
                         amount: result.cashback
                     })
-                    await ruleSets.updateOne({_id:result._id},{$inc:{redemptionLimit:-1}})
+                    await ruleSets.updateOne({_id:result._id,redemptionLimit: {$exists: true}},{$inc:{redemptionLimit:-1}})
 
                     res.status(201).send()
                    } catch (error) {
@@ -86,6 +92,30 @@ router.post('/transaction', (req,res) => {
         })
 
 
+    } catch (error) {
+        console.log(error)
+        res.status(400).send({
+            message:"Something went wrong."
+        })
+    }
+})
+
+/**Get Cashback */
+router.get('/cashback', (req,res) => {
+    try {   
+        transactions.find({amount:{$gt:0}})
+        .select('transactionId amount -_id')
+        .then((result,error)  => {
+                if(error){
+                    console.log(error)
+                    res.status(400).send({
+                        message:"Something went wrong."
+                    })
+                }
+                else {
+                    res.status(201).send(result)
+                }
+            })
     } catch (error) {
         console.log(error)
         res.status(400).send({
