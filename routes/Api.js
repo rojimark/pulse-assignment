@@ -5,7 +5,37 @@ const ruleSets = require('../models/rulesets');
 const transactions = require('../models/transactions');
 const moment = require('moment')
 
-/**Unsubscribe multiple Users */
+/**
+ * @swagger
+ * /api/v1/ruleset:
+ *      post:
+ *          summary: Add a ruleset for cashback
+ *          requestBody:
+ *              required: true
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: object
+ *                          properties:
+ *                              startDate:
+ *                                  type: string
+ *                                  example: 2021-01-01
+ *                              endDate:
+ *                                  type: string
+ *                                  example: 2021-01-31
+ *                              cashback:
+ *                                  type: number
+ *                                  example: 2.50
+ *                              redemptionLimit:
+ *                                  type: number
+ *                                  example: 10
+ *          responses:
+ *              '201':
+ *                  description: Ruleset Created
+ *      
+ */
+
+/**Add a ruleset */
 router.post('/ruleset', (req,res) => {
     try {
         console.log(req.body)
@@ -15,8 +45,8 @@ router.post('/ruleset', (req,res) => {
             endDate:req.body.endDate,
             cashback: req.body.cashback,
             redemptionLimit:req.body.redemptionLimit,
-        }).then(() => {
-            res.status(201).send()
+        }).then((created) => {
+            res.status(201).send(created)
         })
     } catch (error) {
         res.status(400).send({
@@ -25,6 +55,30 @@ router.post('/ruleset', (req,res) => {
     }
 
 })
+
+/**
+ * @swagger
+ * /api/v1/transaction:
+ *      post:
+ *          summary: Add a transaction
+ *          requestBody:
+ *              required: true
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: object
+ *                          properties:
+ *                              transactionDate:
+ *                                  type: string
+ *                                  example: 2021-01-17
+ *                              id:
+ *                                  type: number
+ *                                  example: 1
+ *          responses:
+ *              '201':
+ *                  description: Transaction accepted
+ *      
+ */
 
 /**Post a transaction */
 router.post('/transaction', (req,res) => {
@@ -96,6 +150,19 @@ router.post('/transaction', (req,res) => {
         })
     }
 })
+
+
+/**
+ * @swagger
+ * /api/v1/cashback:
+ *      get:
+ *          summary: Calculate and return a list of transactions qualified for cashback
+ *          description: Cashbacks should be calculated for each transaction using each of the rulesets provided previously.
+ *          responses:
+ *              '201':
+ *                  description: OK
+ *      
+ */
 
 /**Get Cashback */
 router.get('/cashback', (req,res) => {

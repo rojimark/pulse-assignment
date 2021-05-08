@@ -6,7 +6,7 @@ mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true,useFindAndModify
 
 var transactionsSchema = Schema(
   {
-    transactionId:{type:String, unique:true},
+    transactionId:{type:Number, unique:true},
     date:{type:Date},
     amount:{type:Number}
   },
